@@ -1,0 +1,14 @@
+version: "3"
+services:
+  myapp:
+    image: my_app
+    ports:
+      - "8080:8080"
+    container_name: wololo
+    network_mode: "bridge"
+  mongodb:
+    image: mongo
+    ports:
+        - "27017:27017"
+    container_name: palestra-mongodb
+    network_mode: "bridge"
