@@ -1,7 +1,9 @@
 FROM golang
-RUN go get "gopkg.in/mgo.v2"
-RUN go get "github.com/juju/mgosession"
-ADD . /code
-WORKDIR /code
-RUN go build
-CMD ["./code"]
+
+RUN go get -u -v "github.com/juju/mgosession"
+RUN go get -u -v "gopkg.in/mgo.v2"
+
+WORKDIR src
+
+ADD . palestra-go
+WORKDIR palestra-go

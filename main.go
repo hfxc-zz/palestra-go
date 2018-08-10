@@ -13,7 +13,14 @@ import (
 )
 
 func main() {
-	session, err := mgo.Dial(config.MongoDBHost)
+	dialInfo, err := mgo.ParseURL(config.MongoDBHost)
+	dialInfo.Direct = true
+	dialInfo.FailFast = true
+	dialInfo.Database = config.MongoDBDatabase
+	// dialInfo.Username = "admin"
+	// dialInfo.Password = "admin"
+
+	session, err := mgo.DialWithInfo(dialInfo)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

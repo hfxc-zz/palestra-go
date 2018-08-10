@@ -51,7 +51,18 @@ func (r *MongoRepository) FindAll() ([]*entity.Collaborator, error) {
 }
 
 func (r *MongoRepository) Search(query string) ([]*entity.Collaborator, error) {
-	return []*entity.Collaborator{}, nil
+	result := []*entity.Collaborator{}
+	session := r.pool.Session(nil)
+	collection := session.DB(r.db).C("collaborator")
+	err := collection.Find(bson.M{"name": &bson.RegEx{Pattern: query, Options: "i"}}).Limit(10).Sort("name").All(&result)
+	switch err {
+	case nil:
+		return result, nil
+	case mgo.ErrNotFound:
+		return nil, entity.ErrNotFound
+	default:
+		return nil, err
+	}
 }
 
 func (r *MongoRepository) Save(c *entity.Collaborator) (bson.ObjectId, error) {
@@ -65,5 +76,7 @@ func (r *MongoRepository) Save(c *entity.Collaborator) (bson.ObjectId, error) {
 }
 
 func (r *MongoRepository) Delete(id bson.ObjectId) error {
-	return nil
+	session := r.pool.Session(nil)
+	collection := session.DB(r.db).C("collaborator")
+	return collection.Remove(bson.M{"_id": id})
 }

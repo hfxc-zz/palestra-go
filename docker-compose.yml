@@ -1,14 +1,17 @@
 version: "3"
+
 services:
-  myapp:
-    image: my_app
-    ports:
-      - "8080:8080"
-    container_name: wololo
-    network_mode: "bridge"
-  mongodb:
+  mongo:
     image: mongo
     ports:
-        - "27017:27017"
-    container_name: palestra-mongodb
-    network_mode: "bridge"
+      - "27017:27017"
+    container_name: mongo
+    volumes:
+      - "mongo:/data/db"
+    environment:
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=admin
+      - MONGODB_DATABASE=collaborator
+
+volumes:
+  mongo:
