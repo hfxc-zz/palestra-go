@@ -15,12 +15,18 @@ type Reader interface {
 
 // Writer methods that write Collaborators from storage
 type Writer interface {
-	Save(c *entity.Collaborator) (bson.ObjectId, error)
+	Create(c *entity.Collaborator) (bson.ObjectId, error)
 	Delete(id bson.ObjectId) error
 }
 
 // Repository aggregation of all interfaces comunicating with storage
 type Repository interface {
+	Reader
+	Writer
+}
+
+//UseCase use case interface
+type UseCase interface {
 	Reader
 	Writer
 }

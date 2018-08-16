@@ -15,7 +15,7 @@ type CollabLoginData struct {
 
 // Collaborator User data
 type Collaborator struct {
-	ID        bson.ObjectId `json:"id"`
+	ID        bson.ObjectId `json:"id" bson:"_id"`
 	Name      string        `json:"name"`
 	Email     string        `json:"email"`
 	Social    CollabSocial  `json:"social"`

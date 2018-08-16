@@ -6,4 +6,5 @@ const (
 	MongoDBDatabase       = "collaborator"
 	MongoDBConnectionPool = 5
 	APIPort               = 8080
+	APIVersion            = "1"
 )

@@ -1,6 +1,7 @@
 package collaborator
 
 import (
+	"fmt"
 	"palestra-go/pkg/entity"
 
 	"github.com/juju/mgosession"
@@ -8,11 +9,13 @@ import (
 	bson "gopkg.in/mgo.v2/bson"
 )
 
+// MongoRepository .
 type MongoRepository struct {
 	pool *mgosession.Pool
 	db   string
 }
 
+// NewMongoRepository .
 func NewMongoRepository(p *mgosession.Pool, db string) *MongoRepository {
 	return &MongoRepository{
 		pool: p,
@@ -20,6 +23,7 @@ func NewMongoRepository(p *mgosession.Pool, db string) *MongoRepository {
 	}
 }
 
+// Find finds a Collaborator by id
 func (r *MongoRepository) Find(id bson.ObjectId) (*entity.Collaborator, error) {
 	result := entity.Collaborator{}
 	session := r.pool.Session(nil)
@@ -35,11 +39,14 @@ func (r *MongoRepository) Find(id bson.ObjectId) (*entity.Collaborator, error) {
 	}
 }
 
+// FindAll list all Collaborators
 func (r *MongoRepository) FindAll() ([]*entity.Collaborator, error) {
 	result := []*entity.Collaborator{}
 	session := r.pool.Session(nil)
 	collection := session.DB(r.db).C("collaborator")
+	fmt.Println(len(result))
 	err := collection.Find(nil).Sort("createdAt").All(&result)
+	fmt.Println(len(result))
 	switch err {
 	case nil:
 		return result, nil
@@ -50,6 +57,7 @@ func (r *MongoRepository) FindAll() ([]*entity.Collaborator, error) {
 	}
 }
 
+// Search find a Collaborator by his name
 func (r *MongoRepository) Search(query string) ([]*entity.Collaborator, error) {
 	result := []*entity.Collaborator{}
 	session := r.pool.Session(nil)
@@ -65,7 +73,8 @@ func (r *MongoRepository) Search(query string) ([]*entity.Collaborator, error) {
 	}
 }
 
-func (r *MongoRepository) Save(c *entity.Collaborator) (bson.ObjectId, error) {
+// Create save a new Collaborator in database
+func (r *MongoRepository) Create(c *entity.Collaborator) (bson.ObjectId, error) {
 	session := r.pool.Session(nil)
 	collection := session.DB(r.db).C("collaborator")
 	err := collection.Insert(c)
@@ -75,6 +84,7 @@ func (r *MongoRepository) Save(c *entity.Collaborator) (bson.ObjectId, error) {
 	return c.ID, nil
 }
 
+// Delete delete a Collaborator with the id passed as parameter
 func (r *MongoRepository) Delete(id bson.ObjectId) error {
 	session := r.pool.Session(nil)
 	collection := session.DB(r.db).C("collaborator")
