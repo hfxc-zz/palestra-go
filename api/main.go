@@ -7,9 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/codegangsta/negroni"
-	"github.com/gorilla/context"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/juju/mgosession"
 
 	"palestra-go/config"
@@ -19,45 +18,44 @@ import (
 )
 
 func main() {
+	// Configure database connection info
 	dialInfo, err := mgo.ParseURL(config.MongoDBHost)
 	dialInfo.Direct = true
 	dialInfo.FailFast = true
 	dialInfo.Database = config.MongoDBDatabase
-	// dialInfo.Username = "admin"
-	// dialInfo.Password = "admin"
 
+	// Connect to database
 	session, err := mgo.DialWithInfo(dialInfo)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	defer session.Close()
 
-	r := mux.NewRouter()
-
 	mPool := mgosession.NewPool(nil, session, config.MongoDBConnectionPool)
 	defer mPool.Close()
 
+	// Initialize repository and service
 	collaboratorRepo := collaborator.NewMongoRepository(mPool, config.MongoDBDatabase)
 	collaboratorService := collaborator.NewService(collaboratorRepo)
 
-	n := negroni.New(
-		// negroni.HandlerFunc(middleware.Cors),
-		negroni.NewLogger(),
-	)
+	// Initialize and configure router
+	r := chi.NewRouter()
 
-	CreateRoutes(r, *n, collaboratorService)
+	r.Use(middleware.Logger)
 
-	http.Handle("/", r)
-	r.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+	CreateRoutes(r, collaboratorService)
+
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Pong!"))
 	})
 
 	logger := log.New(os.Stderr, "logger: ", log.Lshortfile)
+
 	srv := &http.Server{
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		Addr:         ":" + strconv.Itoa(config.APIPort),
-		Handler:      context.ClearHandler(http.DefaultServeMux),
+		Handler:      r,
 		ErrorLog:     logger,
 	}
 	err = srv.ListenAndServe()

@@ -1,7 +1,6 @@
 package collaborator
 
 import (
-	"fmt"
 	"palestra-go/pkg/entity"
 
 	"github.com/juju/mgosession"
@@ -44,9 +43,7 @@ func (r *MongoRepository) FindAll() ([]*entity.Collaborator, error) {
 	result := []*entity.Collaborator{}
 	session := r.pool.Session(nil)
 	collection := session.DB(r.db).C("collaborator")
-	fmt.Println(len(result))
 	err := collection.Find(nil).Sort("createdAt").All(&result)
-	fmt.Println(len(result))
 	switch err {
 	case nil:
 		return result, nil

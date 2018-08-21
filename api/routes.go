@@ -1,24 +1,26 @@
 package main
 
 import (
-	handler "palestra-go/api/handlers/collaborator"
+	"palestra-go/api/handlers/collaborators"
 	"palestra-go/pkg/collaborator"
 
-	"github.com/codegangsta/negroni"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi"
 )
 
 // CreateRoutes .
-func CreateRoutes(r *mux.Router, n negroni.Negroni, service collaborator.UseCase) {
-	r.Handle("/collaborator", n.With(
-		negroni.Wrap(handler.Root(service)),
-	)).Methods("GET", "OPTIONS")
+func CreateRoutes(r chi.Router, service collaborator.UseCase) {
+	r.Route("/collaborators", func(r chi.Router) {
+		r.Use(collaborators.ServiceContext(&service))
 
-	r.Handle("/collaborator/{id}", n.With(
-		negroni.Wrap(handler.Get(service)),
-	)).Methods("GET", "OPTIONS")
+		r.Get("/", collaborators.Get)  // GET /collaborators
+		r.Post("/", collaborators.Add) // POST /collaborators
 
-	r.Handle("/collaborator", n.With(
-		negroni.Wrap(handler.Add(service)),
-	)).Methods("POST", "OPTIONS")
+		r.Route("/{id}", func(r chi.Router) {
+			r.Use(collaborators.Context)
+
+			r.Get("/", collaborators.GetOne)    // GET /collaborators/{id}
+			r.Put("/", collaborators.Put)       // PUT /collaborators/{id}
+			r.Delete("/", collaborators.Delete) // DELETE /collaborators/{id}
+		})
+	})
 }
