@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"fmt"
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
@@ -20,6 +21,10 @@ type Collaborator struct {
 	Email     string        `json:"email"`
 	Social    CollabSocial  `json:"social"`
 	CreatedAt time.Time     `json:"createdAt"`
+}
+
+func (c *Collaborator) String() string {
+	return fmt.Sprintf("%s, %s, %s, %s, %s, %s", c.Name, c.Email, c.Social.Homepage, c.Social.Github, c.Social.Twitter, c.CreatedAt.String())
 }
 
 // CollabSocial An embedded object inside Collaborator

@@ -81,6 +81,21 @@ func (r *MongoRepository) Create(c *entity.Collaborator) (bson.ObjectId, error) 
 	return c.ID, nil
 }
 
+// Update updates an existent Collaborator in database
+func (r *MongoRepository) Update(id bson.ObjectId, c *entity.Collaborator) (*entity.Collaborator, error) {
+	session := r.pool.Session(nil)
+	collection := session.DB(r.db).C("collaborator")
+	err := collection.Update(bson.M{"_id": id}, c)
+	switch err {
+	case nil:
+		return c, nil
+	case mgo.ErrNotFound:
+		return nil, entity.ErrNotFound
+	default:
+		return nil, err
+	}
+}
+
 // Delete delete a Collaborator with the id passed as parameter
 func (r *MongoRepository) Delete(id bson.ObjectId) error {
 	session := r.pool.Session(nil)

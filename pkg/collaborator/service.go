@@ -22,10 +22,22 @@ func NewService(r Repository) *Service {
 }
 
 //Create an bookmark
-func (s *Service) Create(b *entity.Collaborator) (bson.ObjectId, error) {
-	b.ID = bson.NewObjectId()
-	b.CreatedAt = time.Now()
-	return s.repo.Create(b)
+func (s *Service) Create(c *entity.Collaborator) (bson.ObjectId, error) {
+	c.ID = bson.NewObjectId()
+	c.CreatedAt = time.Now()
+	return s.repo.Create(c)
+}
+
+//Update an bookmark
+func (s *Service) Update(id bson.ObjectId, c *entity.Collaborator) (*entity.Collaborator, error) {
+	collaborator, err := s.repo.Find(id)
+	if err != nil {
+		return nil, err
+	}
+	c.ID = collaborator.ID
+	c.CreatedAt = collaborator.CreatedAt
+
+	return s.repo.Update(id, c)
 }
 
 //Find a bookmark

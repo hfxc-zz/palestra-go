@@ -3,6 +3,7 @@ package collaborators
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"palestra-go/pkg/collaborator"
@@ -152,5 +153,102 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 
 // Put .
 func Put(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	ctxKey := contextKey("service")
+	service, ok := ctx.Value(ctxKey).(*collaborator.UseCase)
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		return
+	}
+	ctxKey = contextKey("collaborator")
+	collaborator, ok := ctx.Value(ctxKey).(*entity.Collaborator)
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		return
+	}
+
+	var reqCollab *entity.Collaborator
+
+	if err := json.NewDecoder(r.Body).Decode(&reqCollab); err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	//TODO: Validar o colaborador proveniente da requisição
+
+	reqCollab, err := (*service).Update(collaborator.ID, reqCollab)
+
+	cJSON, err := json.Marshal(reqCollab)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(cJSON)
+}
+
+// Patch .
+func Patch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	// ctxKey := contextKey("service")
+	// service, ok := ctx.Value(ctxKey).(*collaborator.UseCase)
+	// if !ok {
+	// 	http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+	// 	return
+	// }
+	ctxKey := contextKey("collaborator")
+	collaborator, ok := ctx.Value(ctxKey).(*entity.Collaborator)
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		return
+	}
+
+	var requestCollab entity.Collaborator
+
+	if err := json.NewDecoder(r.Body).Decode(&requestCollab); err != nil {
+		log.Println(err.Error())
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	var requestData map[string]interface{}
+	if err := json.Unmarshal(body, &requestData); err != nil {
+		log.Println(err.Error())
+	}
+
+	log.Println(requestData)
+
+	for k, v := range requestData {
+		log.Println(k)
+		log.Println(v)
+	}
+
+	collab, err := json.Marshal(collaborator)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	var collaboratorData map[string]interface{}
+	if err := json.Unmarshal(collab, &collaboratorData); err != nil {
+		log.Println(err.Error())
+	}
+
+	log.Println(collaboratorData)
+
+	for k, v := range collaboratorData {
+		log.Println(k)
+		log.Println(v)
+	}
+
+	// var c *entity.Collaborator
+	// err = json.NewDecoder(r.Body).Decode(&c)
+	// if err != nil {
+	// 	log.Println(err.Error())
+	// }
+
 	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 }
