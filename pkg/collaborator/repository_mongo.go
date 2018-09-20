@@ -82,17 +82,17 @@ func (r *MongoRepository) Create(c *entity.Collaborator) (bson.ObjectId, error) 
 }
 
 // Update updates an existent Collaborator in database
-func (r *MongoRepository) Update(id bson.ObjectId, c *entity.Collaborator) (*entity.Collaborator, error) {
+func (r *MongoRepository) Update(c *entity.Collaborator) error {
 	session := r.pool.Session(nil)
 	collection := session.DB(r.db).C("collaborator")
-	err := collection.Update(bson.M{"_id": id}, c)
+	err := collection.Update(bson.M{"_id": c.ID}, c)
 	switch err {
 	case nil:
-		return c, nil
+		return nil
 	case mgo.ErrNotFound:
-		return nil, entity.ErrNotFound
+		return entity.ErrNotFound
 	default:
-		return nil, err
+		return err
 	}
 }
 

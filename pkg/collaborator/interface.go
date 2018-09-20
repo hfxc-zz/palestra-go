@@ -16,7 +16,7 @@ type Reader interface {
 // Writer methods that write Collaborators from storage
 type Writer interface {
 	Create(c *entity.Collaborator) (bson.ObjectId, error)
-	Update(id bson.ObjectId, c *entity.Collaborator) (*entity.Collaborator, error)
+	Update(c *entity.Collaborator) error
 	Delete(id bson.ObjectId) error
 }
 

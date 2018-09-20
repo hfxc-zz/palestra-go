@@ -1,12 +1,9 @@
 package collaborators
 
 import (
-	"context"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"palestra-go/pkg/collaborator"
 	"palestra-go/pkg/entity"
 
 	"github.com/go-chi/chi"
@@ -14,45 +11,9 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type contextKey string
-
-// ServiceContext adds the service to router context
-func ServiceContext(service *collaborator.UseCase) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), contextKey("service"), service)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
-}
-
-// Context tries to load the collaborator specified in the URLParam if not possible an error is shown
-func Context(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		ctxKey := contextKey("service")
-		service, ok := ctx.Value(ctxKey).(*collaborator.UseCase)
-		if !ok {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		id := chi.URLParam(r, "id")
-		collaborator, err := (*service).Find(bson.ObjectIdHex(id))
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
-		ctx = context.WithValue(r.Context(), contextKey("collaborator"), collaborator)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-// Get .
+// Get list all collaborators
 func Get(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	ctxKey := contextKey("service")
-	service, ok := ctx.Value(ctxKey).(*collaborator.UseCase)
+	service, ok := Service(r)
 	if !ok {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -77,11 +38,9 @@ func Get(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Add .
+// Add create a new collaborator
 func Add(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	ctxKey := contextKey("service")
-	service, ok := ctx.Value(ctxKey).(*collaborator.UseCase)
+	service, ok := Service(r)
 	if !ok {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -113,11 +72,9 @@ func Add(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetOne .
+// GetOne return one collaborator
 func GetOne(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	ctxKey := contextKey("collaborator")
-	collaborator, ok := ctx.Value(ctxKey).(*entity.Collaborator)
+	collaborator, ok := Collaborator(r)
 	if !ok {
 		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
 		return
@@ -131,11 +88,9 @@ func GetOne(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Delete .
+// Delete remove one collaborator
 func Delete(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	ctxKey := contextKey("service")
-	service, ok := ctx.Value(ctxKey).(*collaborator.UseCase)
+	service, ok := Service(r)
 	if !ok {
 		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
 		return
@@ -151,34 +106,78 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// Put .
+// Put edit one collaborator
 func Put(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	ctxKey := contextKey("service")
-	service, ok := ctx.Value(ctxKey).(*collaborator.UseCase)
+	service, ok := Service(r)
 	if !ok {
-		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
-		return
-	}
-	ctxKey = contextKey("collaborator")
-	collaborator, ok := ctx.Value(ctxKey).(*entity.Collaborator)
-	if !ok {
-		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	var reqCollab *entity.Collaborator
+	collaborator, ok := Collaborator(r)
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
 
-	if err := json.NewDecoder(r.Body).Decode(&reqCollab); err != nil {
+	var requestEntity *entity.Collaborator
+
+	if err := json.NewDecoder(r.Body).Decode(&requestEntity); err != nil {
 		log.Println(err.Error())
 		return
 	}
 
-	//TODO: Validar o colaborador proveniente da requisição
+	if !requestEntity.Valid() {
+		log.Println("err: invalid entity passed as request body")
+		return
+	}
 
-	reqCollab, err := (*service).Update(collaborator.ID, reqCollab)
+	collaborator.CompareAndUpdate(requestEntity)
 
-	cJSON, err := json.Marshal(reqCollab)
+	if err := (*service).Update(collaborator); err != nil {
+		http.Error(w, http.StatusText(http.StatusNotModified), http.StatusNotModified)
+		return
+	}
+
+	responseEntity, err := json.Marshal(collaborator)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseEntity)
+}
+
+// Patch edit one collaborator
+func Patch(w http.ResponseWriter, r *http.Request) {
+	service, ok := Service(r)
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		return
+	}
+
+	collaborator, ok := Collaborator(r)
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		return
+	}
+
+	var requestEntity *entity.Collaborator
+
+	if err := json.NewDecoder(r.Body).Decode(&requestEntity); err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	collaborator.CompareAndUpdate(requestEntity)
+
+	if err := (*service).Update(collaborator); err != nil {
+		http.Error(w, http.StatusText(http.StatusNotModified), http.StatusNotModified)
+		return
+	}
+
+	cJSON, err := json.Marshal(collaborator)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -186,69 +185,4 @@ func Put(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(cJSON)
-}
-
-// Patch .
-func Patch(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	// ctxKey := contextKey("service")
-	// service, ok := ctx.Value(ctxKey).(*collaborator.UseCase)
-	// if !ok {
-	// 	http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
-	// 	return
-	// }
-	ctxKey := contextKey("collaborator")
-	collaborator, ok := ctx.Value(ctxKey).(*entity.Collaborator)
-	if !ok {
-		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
-		return
-	}
-
-	var requestCollab entity.Collaborator
-
-	if err := json.NewDecoder(r.Body).Decode(&requestCollab); err != nil {
-		log.Println(err.Error())
-	}
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	var requestData map[string]interface{}
-	if err := json.Unmarshal(body, &requestData); err != nil {
-		log.Println(err.Error())
-	}
-
-	log.Println(requestData)
-
-	for k, v := range requestData {
-		log.Println(k)
-		log.Println(v)
-	}
-
-	collab, err := json.Marshal(collaborator)
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	var collaboratorData map[string]interface{}
-	if err := json.Unmarshal(collab, &collaboratorData); err != nil {
-		log.Println(err.Error())
-	}
-
-	log.Println(collaboratorData)
-
-	for k, v := range collaboratorData {
-		log.Println(k)
-		log.Println(v)
-	}
-
-	// var c *entity.Collaborator
-	// err = json.NewDecoder(r.Body).Decode(&c)
-	// if err != nil {
-	// 	log.Println(err.Error())
-	// }
-
-	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 }

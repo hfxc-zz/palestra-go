@@ -33,3 +33,31 @@ type CollabSocial struct {
 	Github   string `json:"github"`
 	Twitter  string `json:"twitter"`
 }
+
+// Valid Returns true if the instance is valid, otherwise returns false
+func (c *Collaborator) Valid() bool {
+	return true
+}
+
+// CompareAndUpdate does something
+func (c *Collaborator) CompareAndUpdate(u *Collaborator) {
+	if u.Name != "" {
+		c.Name = u.Name
+	}
+
+	if u.Email != "" {
+		c.Email = u.Email
+	}
+
+	if u.Social.Github != "" {
+		c.Social.Github = u.Social.Github
+	}
+
+	if u.Social.Homepage != "" {
+		c.Social.Homepage = u.Social.Homepage
+	}
+
+	if u.Social.Twitter != "" {
+		c.Social.Twitter = u.Social.Twitter
+	}
+}

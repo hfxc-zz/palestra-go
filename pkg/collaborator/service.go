@@ -29,15 +29,8 @@ func (s *Service) Create(c *entity.Collaborator) (bson.ObjectId, error) {
 }
 
 //Update an bookmark
-func (s *Service) Update(id bson.ObjectId, c *entity.Collaborator) (*entity.Collaborator, error) {
-	collaborator, err := s.repo.Find(id)
-	if err != nil {
-		return nil, err
-	}
-	c.ID = collaborator.ID
-	c.CreatedAt = collaborator.CreatedAt
-
-	return s.repo.Update(id, c)
+func (s *Service) Update(c *entity.Collaborator) error {
+	return s.repo.Update(c)
 }
 
 //Find a bookmark

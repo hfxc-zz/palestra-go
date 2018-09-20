@@ -16,10 +16,11 @@ func CreateRoutes(r chi.Router, service collaborator.UseCase) {
 		r.Post("/", collaborators.Add) // POST /collaborators
 
 		r.Route("/{id}", func(r chi.Router) {
-			r.Use(collaborators.Context)
+			r.Use(collaborators.EntityContext)
 
 			r.Get("/", collaborators.GetOne)    // GET /collaborators/{id}
 			r.Put("/", collaborators.Put)       // PUT /collaborators/{id}
+			r.Patch("/", collaborators.Patch)   // PATCH /collaborators/{id}
 			r.Delete("/", collaborators.Delete) // DELETE /collaborators/{id}
 		})
 	})
