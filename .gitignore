@@ -9,3 +9,6 @@
 
 # Ignore windows executables
 *.exe
+
+# Ignore visual studio code config files
+.vscode/*
