@@ -1,0 +1,14 @@
+# Ignore all
+*
+
+# Unignore all with extensions
+!*.*
+
+# Unignore all dirs
+!*/
+
+# Ignore windows executables
+*.exe
+
+# Ignore visual studio code config files
+.vscode/*
